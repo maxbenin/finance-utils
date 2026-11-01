@@ -1,6 +1,6 @@
 package com.maxbenin.financeutils.dinzo;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -34,16 +34,16 @@ public final class DinzoJson {
     public static DinzoTransaction transaction(JsonNode t) {
         List<String> tags = new ArrayList<>();
         for (JsonNode tag : t.path("tags")) {
-            tags.add(tag.path("title").asText());
+            tags.add(tag.path("title").asString());
         }
         JsonNode inst = t.path("installment");
         return new DinzoTransaction(
                 text(t, "id"),
                 t.path("projected").asBoolean(false),
-                LocalDate.parse(t.path("date").asText()),
+                LocalDate.parse(t.path("date").asString()),
                 text(t, "type"),
                 text(t, "status"),
-                new BigDecimal(t.path("amount").asText("0")),
+                new BigDecimal(t.path("amount").asString("0")),
                 text(t, "description"),
                 text(t, "original_description"),
                 text(t, "notes"),
@@ -63,6 +63,6 @@ public final class DinzoJson {
 
     private static String text(JsonNode node, String field) {
         JsonNode v = node.get(field);
-        return v == null || v.isNull() || v.asText().isEmpty() ? null : v.asText();
+        return v == null || v.isNull() || v.asString().isEmpty() ? null : v.asString();
     }
 }

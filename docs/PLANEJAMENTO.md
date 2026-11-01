@@ -10,7 +10,7 @@ para reduzir, com foco em sobrar dinheiro. O Dinzo é usado só como fonte dos d
 | Tema | Decisão |
 |---|---|
 | Acesso ao Dinzo | Interface `DinzoClient`. Implementado: cliente MCP (JSON-RPC sobre HTTP) e cliente de arquivos JSON. REST entra se o Dinzo confirmar a API. |
-| Stack | Java 21, Spring Boot 3, Maven, PostgreSQL + Flyway, Thymeleaf (+ HTMX e Chart.js nas próximas fases). |
+| Stack | Java 21, Spring Boot 4, Maven, PostgreSQL + Flyway, Thymeleaf (+ HTMX e Chart.js nas próximas fases). |
 | Período do painel | **Mês calendário pela data da compra** (competência). Cartão e conta corrente usam a data do lançamento. |
 | Prioridade das regras | O dado do Open Finance decide: **final do cartão → conta → tag**. Em lançamento manual ainda não consolidado, a **tag** decide primeiro. |
 | Subperfil | Subperfis dentro de Família (ex.: Pedro), definidos pela tag. |

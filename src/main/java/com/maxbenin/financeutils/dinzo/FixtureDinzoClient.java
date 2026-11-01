@@ -1,10 +1,9 @@
 package com.maxbenin.financeutils.dinzo;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
@@ -17,9 +16,9 @@ import java.util.List;
 public class FixtureDinzoClient implements DinzoClient {
 
     private final Path dir;
-    private final ObjectMapper mapper;
+    private final JsonMapper mapper;
 
-    public FixtureDinzoClient(Path dir, ObjectMapper mapper) {
+    public FixtureDinzoClient(Path dir, JsonMapper mapper) {
         this.dir = dir;
         this.mapper = mapper;
     }
@@ -40,8 +39,8 @@ public class FixtureDinzoClient implements DinzoClient {
     private JsonNode read(String file) {
         try {
             return mapper.readTree(dir.resolve(file).toFile());
-        } catch (IOException e) {
-            throw new UncheckedIOException("Falha ao ler fixture " + file, e);
+        } catch (JacksonException e) {
+            throw new DinzoException("Falha ao ler fixture " + file, e);
         }
     }
 }

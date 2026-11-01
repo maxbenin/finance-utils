@@ -13,7 +13,7 @@ Planejamento completo: [docs/PLANEJAMENTO.md](docs/PLANEJAMENTO.md).
 
 ## Stack
 
-Java 21, Spring Boot 3.5, Maven, PostgreSQL + Flyway, Thymeleaf.
+Java 21, Spring Boot 4.1, Maven, PostgreSQL + Flyway, Thymeleaf.
 
 ## Como rodar
 
