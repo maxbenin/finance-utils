@@ -10,6 +10,7 @@ dados que o Dinzo traz via Open Finance.
 - Mostra gastos **fixos, variáveis e supérfluos** e a **sobra** de cada perfil no mês.
 
 Planejamento completo: [docs/PLANEJAMENTO.md](docs/PLANEJAMENTO.md).
+Diagramas do funcionamento: [docs/diagramas](docs/diagramas/README.md).
 
 ## Stack
 
