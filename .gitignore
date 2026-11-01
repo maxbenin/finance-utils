@@ -1,0 +1,9 @@
+target/
+*.iml
+.idea/
+.vscode/
+*.log
+.env
+# Dados pessoais: regras reais de perfis/contas e exportações do Dinzo
+config/seed-local.yml
+data/

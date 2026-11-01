@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: finance-utils
+  config:
+    # Regras reais (ids de contas, nomes) ficam fora do git
+    import: optional:file:./config/seed-local.yml
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/finance}
+    username: ${DB_USER:finance}
+    password: ${DB_PASSWORD:finance}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+dinzo:
+  mode: ${DINZO_MODE:mcp}
+  mcp-url: ${DINZO_MCP_URL:}
+  token: ${DINZO_TOKEN:}
+  fixture-dir: ${DINZO_FIXTURE_DIR:./data/dinzo}
+
+finance:
+  sync:
+    lookback-days: 60
+    cron: "0 0 */6 * * *"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

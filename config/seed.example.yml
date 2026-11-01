@@ -1,0 +1,24 @@
+# Copie para config/seed-local.yml (ignorado pelo git) e preencha com os ids do Dinzo.
+# Carregado só na primeira inicialização, quando ainda não há perfis no banco.
+finance:
+  seed:
+    profiles:
+      - name: Max
+      - name: Familia
+      - name: Pedro
+        parent: Familia          # subperfil
+    card-finals:                 # finais do cartão (campo card_number do Dinzo)
+      - { card-final: "0000", profile: Max, user: Max }
+      - { card-final: "1111", profile: Familia, user: Fulano }
+    accounts:                    # contas correntes (uuid da conta no Dinzo)
+      - { id: "<uuid-conta-familiar>", profile: Familia }
+      - { id: "<uuid-conta-pessoal>", profile: Max }
+    tags:                        # títulos das tags do Dinzo
+      - { tag: Max, profile: Max }
+      - { tag: Familia, profile: Familia }
+      - { tag: Pedro, profile: Pedro }
+    untracked-accounts:          # contas fora dos cálculos
+      - "<uuid-conta-ignorada>"
+    contributors:                # depósitos reconhecidos como contribuição
+      - { contributor: Max, description-contains: "NOME COMPLETO DO MAX", target-profile: Familia }
+      - { contributor: Fulano, description-contains: "NOME COMPLETO", target-profile: Familia }
