@@ -1,0 +1,39 @@
+{
+ "accounts": [
+  {
+   "id": "acc-card",
+   "title": "Cartao",
+   "type": "CREDIT",
+   "sub_type": "CREDIT_CARD",
+   "archived": false
+  },
+  {
+   "id": "acc-bb",
+   "title": "Conta Familia",
+   "type": "BANK",
+   "sub_type": "CHECKING_ACCOUNT",
+   "archived": false
+  },
+  {
+   "id": "acc-c6",
+   "title": "Conta Pessoal",
+   "type": "BANK",
+   "sub_type": "CHECKING_ACCOUNT",
+   "archived": false
+  },
+  {
+   "id": "acc-mp",
+   "title": "Conta Pessoal 2",
+   "type": "BANK",
+   "sub_type": "CHECKING_ACCOUNT",
+   "archived": false
+  },
+  {
+   "id": "acc-wallet",
+   "title": "Carteira",
+   "type": "BANK",
+   "sub_type": "CHECKING_ACCOUNT",
+   "archived": false
+  }
+ ]
+}

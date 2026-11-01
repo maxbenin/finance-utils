@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Finance Utils — Painel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; color: #1f2933; background: #f7f8fa; }
+        header { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+        .card { background: #fff; border-radius: 8px; padding: 1rem 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .card h2 { margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: .3rem .4rem; text-align: left; border-bottom: 1px solid #eef0f3; }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .balance { font-size: 1.4rem; font-weight: 600; }
+        .neg { color: #b42318; } .pos { color: #027a48; }
+        .muted { color: #6b7280; font-size: .9rem; }
+        button { cursor: pointer; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Painel</h1>
+    <a th:href="@{/(month=${previous})}">&larr;</a>
+    <strong th:text="${#temporals.format(month.atDay(1), 'MMMM yyyy', new java.util.Locale('pt','BR'))}">mês</strong>
+    <a th:href="@{/(month=${next})}">&rarr;</a>
+    <form method="post" th:action="@{/sync}"><button type="submit">Sincronizar agora</button></form>
+</header>
+
+<p class="muted" th:if="${syncResult}"
+   th:text="|Sincronizado: ${syncResult.fetched} lidos, ${syncResult.created} novos, ${syncResult.updated} alterados, ${syncResult.removed} removidos, ${syncResult.autoMerged} manuais consolidados, ${syncResult.pendingReview} para confirmar.|"></p>
+
+<section class="cards">
+    <article class="card" th:each="s : ${summaries}">
+        <h2 th:text="${s.profile}">Perfil</h2>
+        <p class="balance" th:classappend="${s.balance().signum() < 0} ? 'neg' : 'pos'"
+           th:text="|Sobra: R$ ${#numbers.formatDecimal(s.balance(), 1, 'POINT', 2, 'COMMA')}|"></p>
+        <table>
+            <tr><td>Entradas</td><td class="num" th:text="${#numbers.formatDecimal(s.income, 1, 'POINT', 2, 'COMMA')}"></td></tr>
+            <tr th:each="c : ${s.contributionsReceived}">
+                <td th:text="|Contribuição de ${c.key}|"></td>
+                <td class="num" th:text="${#numbers.formatDecimal(c.value, 1, 'POINT', 2, 'COMMA')}"></td>
+            </tr>
+            <tr><td>Gastos</td><td class="num" th:text="${#numbers.formatDecimal(s.expenses, 1, 'POINT', 2, 'COMMA')}"></td></tr>
+            <tr><td>&nbsp;&nbsp;Fixos</td><td class="num" th:text="${#numbers.formatDecimal(s.fixed, 1, 'POINT', 2, 'COMMA')}"></td></tr>
+            <tr><td>&nbsp;&nbsp;Variáveis</td><td class="num" th:text="${#numbers.formatDecimal(s.variable, 1, 'POINT', 2, 'COMMA')}"></td></tr>
+            <tr><td>&nbsp;&nbsp;Marcados como supérfluos</td><td class="num" th:text="${#numbers.formatDecimal(s.superfluous, 1, 'POINT', 2, 'COMMA')}"></td></tr>
+            <tr th:each="sub : ${s.bySubprofile}">
+                <td th:text="|&nbsp;&nbsp;Subperfil ${sub.key}|"></td>
+                <td class="num" th:text="${#numbers.formatDecimal(sub.value, 1, 'POINT', 2, 'COMMA')}"></td>
+            </tr>
+            <tr th:if="${s.contributionsMade.signum() > 0}">
+                <td>Contribuições feitas</td>
+                <td class="num" th:text="${#numbers.formatDecimal(s.contributionsMade, 1, 'POINT', 2, 'COMMA')}"></td>
+            </tr>
+        </table>
+    </article>
+</section>
+
+<section class="card" th:unless="${#lists.isEmpty(pending)}">
+    <h2>Consolidações para confirmar</h2>
+    <p class="muted">Lançamento manual que parece ser o mesmo que chegou do Open Finance.</p>
+    <table>
+        <tr><th>Manual</th><th>Real</th><th>Confiança</th><th></th></tr>
+        <tr th:each="r : ${pending}">
+            <td th:text="${r.manualId}"></td>
+            <td th:text="${r.realId}"></td>
+            <td th:text="${r.score}"></td>
+            <td>
+                <form method="post" th:action="@{/consolidacoes/{id}(id=${r.id})}" style="display:inline">
+                    <input type="hidden" name="accept" value="true"><button>Consolidar</button>
+                </form>
+                <form method="post" th:action="@{/consolidacoes/{id}(id=${r.id})}" style="display:inline">
+                    <input type="hidden" name="accept" value="false"><button>Não é o mesmo</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+</section>
+
+<section class="card" th:unless="${#lists.isEmpty(unassigned)}">
+    <h2 th:text="|Avaliar (${#lists.size(unassigned)})|">Avaliar</h2>
+    <p class="muted">Lançamentos sem regra de perfil.</p>
+    <table>
+        <tr><th>Data</th><th>Descrição</th><th>Final</th><th class="num">Valor</th></tr>
+        <tr th:each="e : ${unassigned}">
+            <td th:text="${#temporals.format(e.date, 'dd/MM')}"></td>
+            <td th:text="${e.description}"></td>
+            <td th:text="${e.cardFinal}"></td>
+            <td class="num" th:text="${#numbers.formatDecimal(e.amount, 1, 'POINT', 2, 'COMMA')}"></td>
+        </tr>
+    </table>
+</section>
+</body>
+</html>

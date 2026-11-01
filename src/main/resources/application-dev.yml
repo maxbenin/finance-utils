@@ -1,0 +1,11 @@
+# Desenvolvimento sem Postgres e sem acesso ao Dinzo: H2 em memória + arquivos JSON
+spring:
+  datasource:
+    url: jdbc:h2:mem:finance;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+dinzo:
+  mode: fixture
+finance:
+  sync:
+    cron: "-"

@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:finance-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+dinzo:
+  mode: fixture
+finance:
+  sync:
+    cron: "-"
+    lookback-days: 60
+  seed:
+    profiles:
+      - name: Max
+      - name: Familia
+      - name: Pedro
+        parent: Familia
+    card-finals:
+      - { card-final: "1111", profile: Max, user: Max }
+      - { card-final: "2222", profile: Max, user: Max }
+      - { card-final: "3333", profile: Familia, user: Mariana }
+      - { card-final: "4444", profile: Familia, user: Max }
+    accounts:
+      - { id: acc-bb, profile: Familia }
+      - { id: acc-c6, profile: Max }
+      - { id: acc-mp, profile: Max }
+    tags:
+      - { tag: Max, profile: Max }
+      - { tag: Familia, profile: Familia }
+      - { tag: Pedro, profile: Pedro }
+    untracked-accounts: [acc-wallet]
+    contributors:
+      - { contributor: Max, description-contains: "MAX TESTE", target-profile: Familia }
+      - { contributor: Mariana, description-contains: "MARIANA TESTE", target-profile: Familia }
