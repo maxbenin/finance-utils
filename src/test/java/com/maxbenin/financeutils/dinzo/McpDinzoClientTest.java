@@ -1,11 +1,11 @@
 package com.maxbenin.financeutils.dinzo;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalDate;
 
@@ -15,7 +15,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class McpDinzoClientTest {
 
-    final ObjectMapper mapper = new ObjectMapper();
+    final JsonMapper mapper = JsonMapper.builder().build();
 
     @Test
     void handshakeThenPaginatesTransactionsOverSse() {

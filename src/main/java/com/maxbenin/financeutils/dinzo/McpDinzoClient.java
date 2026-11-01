@@ -1,14 +1,12 @@
 package com.maxbenin.financeutils.dinzo;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +25,11 @@ public class McpDinzoClient implements DinzoClient {
     private static final int PAGE_SIZE = 100;
 
     private final RestClient http;
-    private final ObjectMapper mapper;
+    private final JsonMapper mapper;
     private final AtomicLong ids = new AtomicLong();
     private volatile String sessionId;
 
-    public McpDinzoClient(RestClient.Builder builder, DinzoProperties props, ObjectMapper mapper) {
+    public McpDinzoClient(RestClient.Builder builder, DinzoProperties props, JsonMapper mapper) {
         RestClient.Builder b = builder.baseUrl(props.mcpUrl())
                 .defaultHeader("Accept", "application/json, text/event-stream");
         if (props.token() != null && !props.token().isBlank()) {
@@ -78,8 +76,8 @@ public class McpDinzoClient implements DinzoClient {
             throw new DinzoException("Ferramenta " + name + " falhou: " + result.path("content"));
         }
         for (JsonNode c : result.path("content")) {
-            if ("text".equals(c.path("type").asText())) {
-                return readJson(c.path("text").asText());
+            if ("text".equals(c.path("type").asString())) {
+                return readJson(c.path("text").asString());
             }
         }
         throw new DinzoException("Resposta sem conteúdo de texto para " + name);
@@ -149,10 +147,6 @@ public class McpDinzoClient implements DinzoClient {
     }
 
     private JsonNode readJson(String s) {
-        try {
-            return mapper.readTree(s);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return mapper.readTree(s); // Jackson 3: JacksonException é unchecked
     }
 }
