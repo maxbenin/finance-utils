@@ -9,8 +9,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Lê accounts.json e transactions.json de um diretório, no mesmo formato
- * devolvido pelas ferramentas listar_contas / listar_lancamentos do Dinzo.
+ * Lê accounts.json, categories.json e transactions.json de um diretório, no mesmo formato
+ * devolvido pelas ferramentas listar_contas / listar_categorias / listar_lancamentos do Dinzo.
  * Útil para desenvolvimento e testes sem acesso à conta real.
  */
 public class FixtureDinzoClient implements DinzoClient {
@@ -26,6 +26,11 @@ public class FixtureDinzoClient implements DinzoClient {
     @Override
     public List<DinzoAccount> listAccounts() {
         return DinzoJson.accounts(read("accounts.json"));
+    }
+
+    @Override
+    public List<DinzoCategory> listCategories() {
+        return DinzoJson.categories(read("categories.json"));
     }
 
     @Override

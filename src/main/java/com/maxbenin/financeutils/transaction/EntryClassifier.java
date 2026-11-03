@@ -1,23 +1,32 @@
 package com.maxbenin.financeutils.transaction;
 
 import java.util.Collection;
-import java.util.Optional;
 
-/** Classifica o tipo do lançamento para os totais do painel. */
+/**
+ * Classifica o lançamento para os totais do painel.
+ *
+ * <p>Regra geral: saída da conta corrente e compra no cartão são gastos; crédito na conta corrente
+ * é entrada. Ficam fora: conta não acompanhada, lançamento marcado "não conta", pagamento de fatura
+ * e transferência entre contas do mesmo perfil.
+ */
 public final class EntryClassifier {
 
     public static final String FIXED_TAG = "Fixa";
+
+    /** Transferência pareada com outra conta do app. */
+    public record Transfer(boolean sameProfile, String counterpartProfileName) {
+    }
 
     public record Facts(
             boolean accountTracked,
             boolean creditCardAccount,
             String direction,
-            String billToAccountId,
-            String transferGroupId,
-            boolean hiddenInDinzo,
+            boolean billPayment,
+            boolean excludedFromTotals,
+            Transfer transfer,
             String description,
             Long profileId,
-            String recurrenceId,
+            String recurrenceRef,
             Integer installmentTotal,
             Collection<String> tags) {
     }
@@ -35,24 +44,20 @@ public final class EntryClassifier {
         if (!f.accountTracked()) {
             return new Result(EntryKind.IGNORED, null, null);
         }
-        if (f.billToAccountId() != null) {
+        if (f.excludedFromTotals()) {
+            return new Result(EntryKind.NEUTRAL, null, null);
+        }
+        if (f.billPayment()) {
             return new Result(EntryKind.BILL_PAYMENT, null, null);
         }
-        boolean credit = "CREDIT".equals(f.direction());
-        if (credit && !f.creditCardAccount()) {
-            Optional<String> who = contributors.match(f.description(), f.profileId());
-            if (who.isPresent()) {
-                return new Result(EntryKind.CONTRIBUTION, null, who.get());
-            }
-        }
-        if (f.transferGroupId() != null) {
+        if (f.transfer() != null && f.transfer().sameProfile()) {
             return new Result(EntryKind.TRANSFER, null, null);
         }
-        if (f.hiddenInDinzo()) {
-            return new Result(EntryKind.IGNORED, null, null);
-        }
-        if (credit && !f.creditCardAccount()) {
-            return new Result(EntryKind.INCOME, null, null);
+        if ("CREDIT".equals(f.direction()) && !f.creditCardAccount()) {
+            String who = f.transfer() != null
+                    ? f.transfer().counterpartProfileName()
+                    : contributors.match(f.description(), f.profileId()).orElse(null);
+            return new Result(EntryKind.INCOME, null, who);
         }
         return new Result(EntryKind.EXPENSE, nature(f), null);
     }
@@ -60,6 +65,6 @@ public final class EntryClassifier {
     private static Nature nature(Facts f) {
         boolean fixedTag = f.tags().stream().anyMatch(t -> t.equalsIgnoreCase(FIXED_TAG));
         boolean installment = f.installmentTotal() != null && f.installmentTotal() > 1;
-        return fixedTag || f.recurrenceId() != null || installment ? Nature.FIXED : Nature.VARIABLE;
+        return fixedTag || f.recurrenceRef() != null || installment ? Nature.FIXED : Nature.VARIABLE;
     }
 }

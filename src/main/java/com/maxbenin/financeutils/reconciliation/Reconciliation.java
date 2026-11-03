@@ -7,7 +7,7 @@ import java.time.Instant;
 
 /** Vínculo entre um lançamento manual e o lançamento real do Open Finance. */
 @Entity
-@Table(name = "reconciliation")
+@Table(name = "txn_reconciliation")
 public class Reconciliation {
 
     @Id

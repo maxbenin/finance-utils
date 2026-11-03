@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <title th:text="${title}">Finance Utils</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; color: #1f2933; background: #f7f8fa; }
+        main { padding: 1.5rem 2rem; }
+        nav { display: flex; gap: 1.25rem; align-items: center; padding: .75rem 2rem; background: #1f2933; }
+        nav a { color: #e5e7eb; text-decoration: none; }
+        nav a.brand { font-weight: 600; color: #fff; }
+        header { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+        .card { background: #fff; border-radius: 8px; padding: 1rem 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 1rem; }
+        .card h2 { margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: .3rem .4rem; text-align: left; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .balance { font-size: 1.4rem; font-weight: 600; }
+        .neg { color: #b42318; } .pos { color: #027a48; }
+        .muted { color: #6b7280; font-size: .9rem; }
+        .tag { display: inline-block; padding: 0 .4rem; border-radius: 4px; background: #eef0f3; font-size: .8rem; margin-right: .2rem; }
+        .kind-NEUTRAL, .kind-TRANSFER, .kind-BILL_PAYMENT, .kind-IGNORED { color: #9aa1ab; }
+        .actions form { display: inline; }
+        .actions select, .actions input { font-size: .8rem; }
+        form.grid { display: grid; grid-template-columns: 160px minmax(220px, 420px); gap: .6rem 1rem; align-items: center; }
+        button { cursor: pointer; }
+    </style>
+</head>
+<body>
+<nav th:fragment="nav">
+    <a class="brand" th:href="@{/}">Finance Utils</a>
+    <a th:href="@{/}">Painel</a>
+    <a th:href="@{/lancamentos}">Lançamentos</a>
+    <a th:href="@{/lancamentos/novo}">Novo lançamento</a>
+</nav>
+</body>
+</html>

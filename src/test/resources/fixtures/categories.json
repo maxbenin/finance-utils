@@ -1,0 +1,52 @@
+{
+ "categories": [
+  {
+   "id": "cat-alim",
+   "title": "Alimentação",
+   "parent_id": null,
+   "color_hex": "AAAAAA",
+   "system": true,
+   "archived": false
+  },
+  {
+   "id": "cat-rest",
+   "title": "Restaurante",
+   "parent_id": "cat-alim",
+   "color_hex": "AAAAAA",
+   "system": true,
+   "archived": false
+  },
+  {
+   "id": "cat-transp",
+   "title": "Transporte",
+   "parent_id": null,
+   "color_hex": "AAAAAA",
+   "system": true,
+   "archived": false
+  },
+  {
+   "id": "cat-uber",
+   "title": "Taxi/Uber",
+   "parent_id": "cat-transp",
+   "color_hex": "AAAAAA",
+   "system": true,
+   "archived": false
+  },
+  {
+   "id": "cat-escola",
+   "title": "Escola",
+   "parent_id": null,
+   "color_hex": "AAAAAA",
+   "system": true,
+   "archived": false
+  },
+  {
+   "id": "cat-transf",
+   "title": "Transferência",
+   "parent_id": null,
+   "color_hex": "AAAAAA",
+   "system": true,
+   "archived": false
+  }
+ ]
+}

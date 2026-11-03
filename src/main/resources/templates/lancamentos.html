@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Finance Utils — Lançamentos')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+<header>
+    <h1>Lançamentos</h1>
+    <a th:href="@{/lancamentos(month=${previous}, profile=${profile})}">&larr;</a>
+    <strong th:text="${#temporals.format(month.atDay(1), 'MMMM yyyy', new java.util.Locale('pt','BR'))}">mês</strong>
+    <a th:href="@{/lancamentos(month=${next}, profile=${profile})}">&rarr;</a>
+    <form method="get" th:action="@{/lancamentos}">
+        <input type="hidden" name="month" th:value="${month}">
+        <select name="profile" onchange="this.form.submit()">
+            <option value="">Todos os perfis</option>
+            <option th:each="p : ${profiles}" th:if="${p.root}" th:value="${p.id}" th:text="${p.name}"
+                    th:selected="${p.id == profile}"></option>
+        </select>
+    </form>
+    <a th:href="@{/lancamentos/novo}">+ Novo lançamento</a>
+</header>
+<p class="muted" th:if="${message}" th:text="${message}"></p>
+
+<section class="card">
+    <table>
+        <tr>
+            <th>Data</th><th>Conta</th><th>Descrição</th><th>Perfil</th><th>Tipo</th><th class="num">Valor</th><th>Ações</th>
+        </tr>
+        <tr th:each="r : ${rows}" th:with="e=${r.entry}" th:classappend="|kind-${e.kind}|">
+            <td th:text="${#temporals.format(e.date, 'dd/MM')}"></td>
+            <td>
+                <span th:text="${r.account}"></span>
+                <span class="muted" th:if="${e.cardFinal}" th:text="|final ${e.cardFinal}|"></span>
+            </td>
+            <td>
+                <span th:text="${e.description}"></span>
+                <span class="muted" th:if="${e.installmentTotal}" th:text="|(${e.installmentCurrent}/${e.installmentTotal})|"></span>
+                <br>
+                <span class="tag" th:each="t : ${e.tags}" th:text="${t}"></span>
+                <span class="muted" th:text="${r.category}"></span>
+                <span class="muted" th:if="${e.manual}"> · manual</span>
+                <span class="muted" th:if="${e.effectiveExcludeReason}" th:text="| · não conta: ${e.effectiveExcludeReason}|"></span>
+            </td>
+            <td>
+                <span th:text="${e.kind?.name() == 'IGNORED'} ? '—' : (${r.profile} ?: 'Avaliar')"></span>
+                <span class="muted" th:if="${r.subprofile}" th:text="|/ ${r.subprofile}|"></span>
+                <span class="muted" th:if="${e.profileOverrideId}"> (escolhido)</span>
+            </td>
+            <td>
+                <span th:switch="${e.kind?.name()}">
+                    <span th:case="'EXPENSE'" th:text="${e.nature?.name() == 'FIXED'} ? 'Gasto fixo' : 'Gasto variável'"></span>
+                    <span th:case="'INCOME'">Entrada</span>
+                    <span th:case="'TRANSFER'">Transferência interna</span>
+                    <span th:case="'BILL_PAYMENT'">Pagamento de fatura</span>
+                    <span th:case="'NEUTRAL'">Não conta</span>
+                    <span th:case="'IGNORED'">Conta ignorada</span>
+                </span>
+                <span class="muted" th:if="${e.contributor}" th:text="|de ${e.contributor}|"></span>
+                <span class="muted" th:if="${r.counterpart} and ${e.debit}" th:text="|para ${r.counterpart}|"></span>
+                <span th:if="${e.superfluous}" class="tag">supérfluo</span>
+            </td>
+            <td class="num" th:classappend="${e.debit} ? 'neg' : 'pos'"
+                th:text="${(e.debit ? '-' : '+') + #numbers.formatDecimal(e.amount, 1, 'POINT', 2, 'COMMA')}"></td>
+            <td class="actions">
+                <form method="post" th:action="@{/lancamentos/{id}/totais(id=${e.id})}" th:unless="${e.excludedFromTotals}">
+                    <input type="hidden" name="mode" value="EXCLUDE">
+                    <input name="reason" placeholder="motivo (ex.: acerto de contas)" size="18">
+                    <button title="Tirar dos totais">Não conta</button>
+                </form>
+                <form method="post" th:action="@{/lancamentos/{id}/totais(id=${e.id})}" th:if="${e.excludedFromTotals}">
+                    <input type="hidden" name="mode" value="INCLUDE"><button title="Voltar a contar nos totais">Conta</button>
+                </form>
+                <form method="post" th:action="@{/lancamentos/{id}/totais(id=${e.id})}" th:if="${e.totalsOverride}">
+                    <input type="hidden" name="mode" value="AUTO"><button title="Voltar à sugestão automática">Auto</button>
+                </form>
+                <form method="post" th:action="@{/lancamentos/{id}/superfluo(id=${e.id})}" th:if="${e.kind?.name() == 'EXPENSE'}">
+                    <input type="hidden" name="value" th:value="${e.superfluous} ? '' : 'true'">
+                    <button th:text="${e.superfluous} ? 'Não é supérfluo' : 'Supérfluo'"></button>
+                </form>
+                <form method="post" th:action="@{/lancamentos/{id}/perfil(id=${e.id})}">
+                    <select name="profileId" onchange="this.form.submit()">
+                        <option value="" th:selected="${e.profileOverrideId == null}">Perfil: automático</option>
+                        <option th:each="p : ${profiles}" th:value="${p.id}"
+                                th:text="${p.root} ? ${p.name} : |${p.parent.name} / ${p.name}|"
+                                th:selected="${p.id == e.profileOverrideId}"></option>
+                    </select>
+                </form>
+                <form method="post" th:action="@{/lancamentos/{id}/categoria(id=${e.id})}">
+                    <select name="categoryId" onchange="this.form.submit()">
+                        <option value="">Sem categoria</option>
+                        <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"
+                                th:selected="${c.id == e.categoryId}"></option>
+                    </select>
+                </form>
+                <form method="post" th:action="@{/lancamentos/{id}/remover(id=${e.id})}" th:if="${e.origin == 'APP'}"
+                      onsubmit="return confirm('Remover este lançamento manual?')">
+                    <button>Remover</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+    <p class="muted" th:if="${#lists.isEmpty(rows)}">Nenhum lançamento neste mês.</p>
+</section>
+</main>
+</body>
+</html>

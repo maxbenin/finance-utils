@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Finance Utils — Novo lançamento')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+<h1>Novo lançamento manual</h1>
+<p class="muted">Use para registrar uma compra antes de o banco trazê-la. Quando o lançamento real chegar,
+    os dois são consolidados e o real herda as tags deste.</p>
+<section class="card">
+    <form class="grid" method="post" th:action="@{/lancamentos}">
+        <label for="accountId">Conta</label>
+        <select id="accountId" name="accountId" required>
+            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.name}"></option>
+        </select>
+
+        <label for="date">Data da compra</label>
+        <input id="date" type="date" name="date" th:value="${today}" required>
+
+        <label for="direction">Tipo</label>
+        <select id="direction" name="direction">
+            <option value="DEBIT">Saída / compra</option>
+            <option value="CREDIT">Entrada / estorno</option>
+        </select>
+
+        <label for="amount">Valor (R$)</label>
+        <input id="amount" type="number" name="amount" min="0.01" step="0.01" required>
+
+        <label for="description">Descrição</label>
+        <input id="description" name="description" required>
+
+        <label for="cardFinal">Final do cartão</label>
+        <input id="cardFinal" name="cardFinal" maxlength="4" placeholder="só para cartão">
+
+        <label for="categoryId">Categoria</label>
+        <select id="categoryId" name="categoryId">
+            <option value="">Sem categoria</option>
+            <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"></option>
+        </select>
+
+        <label for="tags">Tags</label>
+        <input id="tags" name="tags" placeholder="separadas por vírgula, ex.: Familia, Pedro">
+
+        <label for="notes">Observações</label>
+        <input id="notes" name="notes">
+
+        <span></span>
+        <button type="submit">Salvar</button>
+    </form>
+</section>
+</main>
+</body>
+</html>

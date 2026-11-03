@@ -45,6 +45,11 @@ public class McpDinzoClient implements DinzoClient {
     }
 
     @Override
+    public List<DinzoCategory> listCategories() {
+        return DinzoJson.categories(callTool("listar_categorias", Map.of()));
+    }
+
+    @Override
     public List<DinzoTransaction> listTransactions(LocalDate from, LocalDate to) {
         List<DinzoTransaction> all = new ArrayList<>();
         int page = 1;

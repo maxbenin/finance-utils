@@ -40,8 +40,23 @@ o que importa é quanto sai e quanto entra, não monitorar o cartão.
 | Transferência entre contas do **mesmo perfil** | Fora (transferência interna) |
 | Transferência entre contas de **perfis diferentes** (ex.: Max → Família) | Gasto no perfil de origem e **entrada** no de destino, marcada como contribuição de quem enviou |
 | Depósito de quem não tem conta no app (ex.: Mariana) | Entrada, marcada como contribuição pelo nome na descrição |
+| Marcado **"não conta"** | Fora dos totais, com o motivo. Vale para qualquer lançamento |
 
 **Sobra do perfil no mês = Entradas − Gastos.**
+
+### Marcador "não conta" e acerto de fatura
+
+A fatura do cartão é única e paga pela conta pessoal. Os gastos familiares são divididos 50/50 e os
+pessoais são de quem gastou. A Família repassa a parte dela com um PIX da conta familiar para a
+conta que paga a fatura. Como as compras nos cartões da Família já contam como gasto da Família,
+esse repasse não pode contar de novo.
+
+- **Sugestão automática:** uma transferência de outro perfil para a conta que paga a fatura é
+  marcada "não conta" com o motivo **Acerto de fatura**, nos dois lados.
+- **Decisão do usuário:** qualquer lançamento pode ser marcado ou desmarcado como "não conta", com
+  um motivo livre (ex.: acerto de contas, compra reembolsada). A decisão sobrevive às sincronizações.
+- Exemplo: a Mariana fez compras pessoais no cartão da Família e devolveu por PIX na conta pessoal.
+  As compras são marcadas "não conta" (reembolsada) e o PIX também (acerto de contas).
 
 Uma transferência é reconhecida pelo par débito/crédito de mesmo valor, em até 1 dia, entre contas
 cadastradas no app (ou pelo grupo de transferência que o Dinzo informa). O perfil de cada lado
@@ -98,22 +113,26 @@ PDF ─> Docling (local, docling-serve) ─> texto/tabelas ─> LLM via OpenRout
 - [x] **F1, base:** schema, cliente Dinzo, sincronização, regras de perfil, contribuições,
       consolidação manual → real, painel inicial e testes.
 - [x] Migração para Spring Boot 4.1 e diagramas em `docs/diagramas/`.
-- [ ] **F2, modelo próprio:** contas, cartões, categorias e lançamentos com id próprio; referências
-      externas; migração dos dados atuais; novas regras de entradas e gastos; lançamento manual no app.
-- [ ] **F3, importação:** lote, revisão e agrupamento de parecidos; Dinzo adaptado aos quatro usos
-      (carga de 12 meses e das categorias, lote, conferência, descoberta).
+- [x] **F2, modelo próprio:** contas, categorias e lançamentos com id próprio; referências
+      externas; migração dos dados da F1; novas regras de entradas e gastos; pareamento de
+      transferências; marcador "não conta" e acerto de fatura; lançamento manual no app; lista do
+      mês com ações (não conta, supérfluo, perfil, categoria); carga inicial de 12 meses e
+      importação da árvore de categorias do Dinzo.
+- [ ] **F3, importação:** lote, revisão e agrupamento de parecidos; Dinzo como lote, conferência e
+      descoberta de contas e finais de cartão novos.
 - [ ] **F4, arquivos:** OFX, CSV e XLSX com mapeamento salvo.
 - [ ] **F5, PDF:** Docling + LLM, com validação.
 - [ ] **F6, gestão:** telas de perfis, regras e categorias; reclassificação; fila "Avaliar".
-- [ ] **F7, painel:** gráficos, evolução mês a mês, supérfluos, previsão a partir dos 12 meses e
-      "onde reduzir".
+- [ ] **F7, painel:** gráficos, evolução mês a mês, divisão 50/50 dos gastos da Família com o que
+      cada um contribuiu, conferência da fatura da Família (compras × repasse), previsão a partir
+      dos 12 meses e "onde reduzir".
 
 ## Pendências para decidir
 
-1. **Fatura dos cartões da Família paga pela conta pessoal:** pelas regras acima, as compras nos
-   finais da Família são gastos da Família, e o pagamento da fatura fica fora. Assim, o fato de a
-   conta pessoal pagar essa parte não aparece em lugar nenhum. Ela deve contar como contribuição
-   (gasto no perfil pessoal, entrada na Família)?
-2. **PDF:** confirmar Docling local + OpenRouter, qual modelo e se o texto dos extratos pode sair
-   da máquina.
-3. **Exemplos de arquivo:** um de cada formato e banco, para escrever e testar os leitores.
+1. **PDF:** começar com leitor fixo para a fatura do C6 (nada sai do servidor) e deixar o LLM via
+   OpenRouter como opção; depende de ver um PDF de fatura. O Docling roda no mesmo servidor do app.
+2. **Exemplos de arquivo:** fatura do C6 em CSV, XLSX e PDF, e extratos de conta em CSV, XLSX e PDF.
+   Os OFX do C6 e do BB já foram recebidos.
+3. **Provedor de Open Finance para substituir o Dinzo:** avaliar o Pluggy direto (API REST) e o UPX
+   Financial MCP. Pontos críticos: uso por aplicação (não só assistente), limite de consultas, final
+   do cartão e data da compra nos lançamentos.
