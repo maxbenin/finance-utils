@@ -1,16 +1,20 @@
 package com.maxbenin.financeutils.transaction;
 
 public enum EntryKind {
-    /** Gasto (débito em conta ou cartão; crédito no cartão = estorno, reduz o gasto). */
+    /** Saída da conta corrente ou compra no cartão (estorno no cartão abate). */
     EXPENSE,
-    /** Entrada em conta corrente. */
+    /** Crédito na conta corrente (inclui transferência vinda de outro perfil). */
     INCOME,
-    /** Depósito de um membro numa conta de outro perfil (ex.: Max -> BB/Familia). */
-    CONTRIBUTION,
-    /** Transferência entre contas próprias: fora dos totais. */
+    /** Transferência entre contas do mesmo perfil: fora dos totais. */
     TRANSFER,
-    /** Pagamento de fatura: fora dos totais (os gastos já contam individualmente). */
+    /** Pagamento de fatura: fora dos totais (as compras do cartão já contam). */
     BILL_PAYMENT,
-    /** Conta não acompanhada ou lançamento oculto no Dinzo. */
-    IGNORED
+    /** Marcado como "não conta nos totais" (acerto de fatura, acerto de contas, reembolsado...). */
+    NEUTRAL,
+    /** Conta não acompanhada. */
+    IGNORED;
+
+    public boolean countsInTotals() {
+        return this == EXPENSE || this == INCOME;
+    }
 }

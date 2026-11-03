@@ -18,7 +18,16 @@ public final class DinzoJson {
         for (JsonNode a : root.path("accounts")) {
             result.add(new DinzoAccount(
                     text(a, "id"), text(a, "title"), text(a, "type"), text(a, "sub_type"),
-                    a.path("archived").asBoolean(false)));
+                    a.path("archived").asBoolean(false), text(a, "pay_bill_from_account_id")));
+        }
+        return result;
+    }
+
+    public static List<DinzoCategory> categories(JsonNode root) {
+        List<DinzoCategory> result = new ArrayList<>();
+        for (JsonNode c : root.path("categories")) {
+            result.add(new DinzoCategory(text(c, "id"), text(c, "title"), text(c, "parent_id"),
+                    text(c, "color_hex"), c.path("archived").asBoolean(false)));
         }
         return result;
     }

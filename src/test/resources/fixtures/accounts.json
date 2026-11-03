@@ -5,35 +5,40 @@
    "title": "Cartao",
    "type": "CREDIT",
    "sub_type": "CREDIT_CARD",
-   "archived": false
+   "archived": false,
+   "pay_bill_from_account_id": "acc-c6"
   },
   {
    "id": "acc-bb",
    "title": "Conta Familia",
    "type": "BANK",
    "sub_type": "CHECKING_ACCOUNT",
-   "archived": false
+   "archived": false,
+   "pay_bill_from_account_id": null
   },
   {
    "id": "acc-c6",
    "title": "Conta Pessoal",
    "type": "BANK",
    "sub_type": "CHECKING_ACCOUNT",
-   "archived": false
+   "archived": false,
+   "pay_bill_from_account_id": null
   },
   {
    "id": "acc-mp",
    "title": "Conta Pessoal 2",
    "type": "BANK",
    "sub_type": "CHECKING_ACCOUNT",
-   "archived": false
+   "archived": false,
+   "pay_bill_from_account_id": null
   },
   {
    "id": "acc-wallet",
    "title": "Carteira",
    "type": "BANK",
    "sub_type": "CHECKING_ACCOUNT",
-   "archived": false
+   "archived": false,
+   "pay_bill_from_account_id": null
   }
  ]
 }

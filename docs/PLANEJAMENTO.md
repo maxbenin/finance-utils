@@ -2,68 +2,137 @@
 
 ## Objetivo
 
-Painel por perfil (pessoal e familiar) com gastos fixos, variáveis e supérfluos e o que dá
-para reduzir, com foco em sobrar dinheiro. O Dinzo é usado só como fonte dos dados do Open Finance.
+Um gestor financeiro independente, com painel por perfil (pessoal e familiar) que mostra quanto
+entra, quanto sai, os gastos fixos, variáveis e supérfluos e o que dá para reduzir, com foco em
+sobrar dinheiro.
+
+O **Dinzo** deixa de ser a fonte da verdade e vira uma das formas de trazer dados:
+carga inicial, importação em lote, conferência e descoberta de contas e cartões novos. Os
+lançamentos também podem vir de **arquivos** (OFX, CSV, XLSX, PDF) ou ser feitos **à mão no app**.
+O Dinzo segue em uso até o app estar estável o bastante para trocar por uma ferramenta que fale
+com o Open Finance diretamente.
 
 ## Decisões tomadas
 
 | Tema | Decisão |
 |---|---|
-| Acesso ao Dinzo | Interface `DinzoClient`. Implementado: cliente MCP (JSON-RPC sobre HTTP) e cliente de arquivos JSON. REST entra se o Dinzo confirmar a API. |
-| Stack | Java 21, Spring Boot 4, Maven, PostgreSQL + Flyway, Thymeleaf (+ HTMX e Chart.js nas próximas fases). |
-| Período do painel | **Mês calendário pela data da compra** (competência). Cartão e conta corrente usam a data do lançamento. |
-| Prioridade das regras | O dado do Open Finance decide: **final do cartão → conta → tag**. Em lançamento manual ainda não consolidado, a **tag** decide primeiro. |
-| Subperfil | Subperfis dentro de Família (ex.: Pedro), definidos pela tag. |
-| Contribuição | Depósito nas contas da Família reconhecido pela descrição (nome de quem enviou). Entra como contribuição para a Família e sai da sobra de quem contribuiu. |
-| Parcelamento | Só a parcela do mês entra, como gasto fixo. |
-| Manual → real | Consolidação só do nosso lado. No Dinzo nada é alterado. O real herda as tags do manual (ex.: subperfil). |
-| Contas fora dos cálculos | Ex.: Carteira, por enquanto. |
-| Supérfluos | Marcação manual pelo usuário. |
+| Fonte da verdade | O banco de dados do app. Contas, cartões e lançamentos têm id próprio. O id do Dinzo (ou a linha do arquivo) fica guardado como **referência externa**. |
+| Origens | Manual no app, Dinzo, OFX, CSV, XLSX, PDF. |
+| Manuais | Lançados no app **e** no Dinzo, até abandonar o Dinzo. Os dois são consolidados com o lançamento real. |
+| Duplicados entre origens | Lançamentos parecidos vindos de origens diferentes são **agrupados para o usuário decidir**. Nada é sobrescrito automaticamente. |
+| Importação | Toda importação vira um **lote** revisado antes de gravar: novo, já existe, divergente ou descartar. |
+| Carga inicial | 12 meses de histórico do Dinzo. |
+| Categorias | Importar a árvore completa de categorias do Dinzo, inclusive as que ainda não têm lançamentos. Depois disso as categorias são do app, e o usuário pode refinar e reclassificar. |
+| Período do painel | Mês calendário pela data da compra (competência). |
+| Stack | Java 21, Spring Boot 4, Maven, PostgreSQL + Flyway, Thymeleaf (+ HTMX e Chart.js). |
 
-## Regras
+## Regras de entradas e gastos
 
-Os valores reais (finais, contas, nomes) ficam em `config/seed-local.yml`, fora do git.
+O cartão de crédito é tratado como um acumulador de pagamentos que só é quitado no fim do mês:
+o que importa é quanto sai e quanto entra, não monitorar o cartão.
 
-- Cada final de cartão aponta para um perfil e guarda quem usa o cartão.
-- Conta corrente familiar → Família; demais contas correntes → perfil pessoal.
-- Tags de perfil e de subperfil nos lançamentos manuais.
-- Fixo: tag `Fixa`, recorrência ou parcelamento. O resto é variável.
+| Movimento | Como conta |
+|---|---|
+| Saída da conta corrente | **Gasto**, seja o que for |
+| Compra no cartão | **Gasto** (estorno no cartão abate o gasto) |
+| Crédito na conta corrente | **Entrada**, seja o que for |
+| Pagamento de fatura | Fora (as compras do cartão já contaram uma a uma) |
+| Transferência entre contas do **mesmo perfil** | Fora (transferência interna) |
+| Transferência entre contas de **perfis diferentes** (ex.: Max → Família) | Gasto no perfil de origem e **entrada** no de destino, marcada como contribuição de quem enviou |
+| Depósito de quem não tem conta no app (ex.: Mariana) | Entrada, marcada como contribuição pelo nome na descrição |
+| Marcado **"não conta"** | Fora dos totais, com o motivo. Vale para qualquer lançamento |
 
-## Fora dos totais
+**Sobra do perfil no mês = Entradas − Gastos.**
 
-- Pagamento de fatura (os gastos do cartão já contam um a um).
-- Transferências entre contas próprias (`transfer_group_id`) e lançamentos ocultos no Dinzo.
-- Contas não acompanhadas.
-- Estornos no cartão abatem o gasto.
+### Marcador "não conta" e acerto de fatura
 
-## Sincronização
+A fatura do cartão é única e paga pela conta pessoal. Os gastos familiares são divididos 50/50 e os
+pessoais são de quem gastou. A Família repassa a parte dela com um PIX da conta familiar para a
+conta que paga a fatura. Como as compras nos cartões da Família já contam como gasto da Família,
+esse repasse não pode contar de novo.
 
-1. Atualiza as contas.
-2. Busca os lançamentos dos últimos 60 dias (visão `ledger`, sem projeções).
-3. Grava cada um com o id do Dinzo, o JSON original e um hash. Mudança de conteúdo → `changed_at`;
-   sumiu do Dinzo → `removed_at`.
-4. Para cada lançamento novo do Open Finance, procura um manual em aberto: mesma conta e
-   direção, valor com tolerância (R$ 0,50 ou 2%), data de 1 dia antes a 3 dias depois e descrição
-   parecida. Candidato claro → consolida; ambíguo → fila "Consolidações para confirmar".
-5. Recalcula perfil, subperfil, tipo e natureza de todos os lançamentos da janela.
+- **Sugestão automática:** uma transferência de outro perfil para a conta que paga a fatura é
+  marcada "não conta" com o motivo **Acerto de fatura**, nos dois lados.
+- **Decisão do usuário:** qualquer lançamento pode ser marcado ou desmarcado como "não conta", com
+  um motivo livre (ex.: acerto de contas, compra reembolsada). A decisão sobrevive às sincronizações.
+- Exemplo: a Mariana fez compras pessoais no cartão da Família e devolveu por PIX na conta pessoal.
+  As compras são marcadas "não conta" (reembolsada) e o PIX também (acerto de contas).
+
+Uma transferência é reconhecida pelo par débito/crédito de mesmo valor, em até 1 dia, entre contas
+cadastradas no app (ou pelo grupo de transferência que o Dinzo informa). O perfil de cada lado
+decide se é interna ou entre perfis.
+
+## Regras de perfil
+
+- Lançamento importado (Open Finance, arquivo): **final do cartão → conta → tag**.
+- Lançamento manual ainda não consolidado: **tag → conta**.
+- Subperfil pela tag (ex.: Pedro dentro de Família). O lançamento real herda as tags do manual.
+- Sem regra: fila "Avaliar".
+- Fixo: tag `Fixa`, recorrência ou parcela (só a parcela do mês entra). O resto é variável.
+- Supérfluo: marcação manual.
+
+## Usos do Dinzo
+
+| Uso | O que faz |
+|---|---|
+| Carga inicial | Traz 12 meses de histórico, as categorias, as contas e os cartões, e sugere o perfil de cada um |
+| Importação em lote | Traz um período como lote de importação, revisado como qualquer arquivo |
+| Conferência | Compara um período do Dinzo com o app: falta no app, falta no Dinzo, valor ou data diferente |
+| Descoberta | Avisa quando aparece conta nova ou final de cartão novo, para cadastrar e definir o perfil |
+
+## Importação de arquivos
+
+| Formato | Conta corrente | Cartão C6 | Leitura |
+|---|---|---|---|
+| OFX | sim | — | Leitor próprio (padrão aberto) |
+| CSV | sim | sim | Mapeamento de colunas salvo por banco e tipo de arquivo |
+| XLSX | sim | sim | Apache POI + o mesmo mapeamento de colunas |
+| PDF | sim | sim | Conversão + extração por LLM (em discussão, abaixo) |
+
+Os testes usam arquivos fictícios. Nenhum extrato real vai para o git (o repositório é público).
+
+### PDF: proposta em discussão
+
+```
+PDF ─> Docling (local, docling-serve) ─> texto/tabelas ─> LLM via OpenRouter ─> JSON validado ─> lote
+```
+
+- **Docling** roda localmente como serviço separado (Docker) e converte o PDF em Markdown/JSON,
+  inclusive tabelas e PDFs escaneados (OCR). O app Java chama a API REST dele.
+- **LLM via OpenRouter** recebe o texto e devolve os lançamentos num formato JSON fixo (data,
+  descrição, valor, direção, final do cartão, parcela). Modelo configurável.
+- **Validação** antes do lote: datas dentro do período do extrato, valores positivos e, quando o
+  documento traz, soma conferida com o total impresso (total da fatura, saldo final). Divergência
+  vira aviso no lote, não bloqueio.
+- **Privacidade:** o Docling não envia nada para fora. O texto do extrato vai para o OpenRouter e
+  para o provedor do modelo. Mitigações: restringir a provedores sem retenção de dados, ou usar um
+  modelo local.
 
 ## Fases
 
 - [x] **F1, base:** schema, cliente Dinzo, sincronização, regras de perfil, contribuições,
       consolidação manual → real, painel inicial e testes.
-- [ ] **F2, conectar:** confirmar endpoint e autenticação do Dinzo (REST ou MCP) e rodar com dados reais.
-- [ ] **F3, gestão:** telas para criar e editar perfis e regras, ajuste manual de perfil por
-      lançamento, ação na fila "Avaliar".
-- [ ] **F4, supérfluos:** marcar lançamento ou estabelecimento como supérfluo e aplicar aos próximos.
-- [ ] **F5, painel:** categorias do Dinzo, gráficos (Chart.js), evolução mês a mês, quadro da
-      fatura corrente, filtro por quem usa o cartão.
-- [ ] **F6, onde reduzir:** assinaturas repetidas entre perfis, categorias acima da média e
-      simulação "quanto sobra se cortar X".
+- [x] Migração para Spring Boot 4.1 e diagramas em `docs/diagramas/`.
+- [x] **F2, modelo próprio:** contas, categorias e lançamentos com id próprio; referências
+      externas; migração dos dados da F1; novas regras de entradas e gastos; pareamento de
+      transferências; marcador "não conta" e acerto de fatura; lançamento manual no app; lista do
+      mês com ações (não conta, supérfluo, perfil, categoria); carga inicial de 12 meses e
+      importação da árvore de categorias do Dinzo.
+- [ ] **F3, importação:** lote, revisão e agrupamento de parecidos; Dinzo como lote, conferência e
+      descoberta de contas e finais de cartão novos.
+- [ ] **F4, arquivos:** OFX, CSV e XLSX com mapeamento salvo.
+- [ ] **F5, PDF:** Docling + LLM, com validação.
+- [ ] **F6, gestão:** telas de perfis, regras e categorias; reclassificação; fila "Avaliar".
+- [ ] **F7, painel:** gráficos, evolução mês a mês, divisão 50/50 dos gastos da Família com o que
+      cada um contribuiu, conferência da fatura da Família (compras × repasse), previsão a partir
+      dos 12 meses e "onde reduzir".
 
 ## Pendências para decidir
 
-1. **Fatura paga pela conta pessoal:** a fatura do cartão é paga por uma conta pessoal,
-   inclusive os gastos dos cartões da Família. Contar essa parte como contribuição?
-2. **Gasto da Família pago pela conta pessoal:** ex.: lançamento na conta pessoal com tag
-   Familia. Hoje fica no perfil pessoal (o Open Finance decide). Deve contar como contribuição?
-3. **Outros contribuintes:** alguém além dos dois já cadastrados deposita na conta familiar?
+1. **PDF:** começar com leitor fixo para a fatura do C6 (nada sai do servidor) e deixar o LLM via
+   OpenRouter como opção; depende de ver um PDF de fatura. O Docling roda no mesmo servidor do app.
+2. **Exemplos de arquivo:** fatura do C6 em CSV, XLSX e PDF, e extratos de conta em CSV, XLSX e PDF.
+   Os OFX do C6 e do BB já foram recebidos.
+3. **Provedor de Open Finance para substituir o Dinzo:** avaliar o Pluggy direto (API REST) e o UPX
+   Financial MCP. Pontos críticos: uso por aplicação (não só assistente), limite de consultas, final
+   do cartão e data da compra nos lançamentos.

@@ -1,14 +1,17 @@
 package com.maxbenin.financeutils.config;
 
 import com.maxbenin.financeutils.profile.*;
-import com.maxbenin.financeutils.transaction.TrackedAccount;
-import com.maxbenin.financeutils.transaction.TrackedAccountRepository;
+import com.maxbenin.financeutils.account.Account;
+import com.maxbenin.financeutils.account.AccountKind;
+import com.maxbenin.financeutils.account.AccountRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 import static com.maxbenin.financeutils.config.SeedProperties.orEmpty;
 
@@ -22,10 +25,10 @@ public class SeedLoader implements ApplicationRunner {
     private final ProfileRepository profiles;
     private final ProfileRuleRepository rules;
     private final ContributorRuleRepository contributors;
-    private final TrackedAccountRepository accounts;
+    private final AccountRepository accounts;
 
     public SeedLoader(SeedProperties seed, ProfileRepository profiles, ProfileRuleRepository rules,
-                      ContributorRuleRepository contributors, TrackedAccountRepository accounts) {
+                      ContributorRuleRepository contributors, AccountRepository accounts) {
         this.seed = seed;
         this.profiles = profiles;
         this.rules = rules;
@@ -52,7 +55,7 @@ public class SeedLoader implements ApplicationRunner {
         orEmpty(seed.contributors()).forEach(c ->
                 contributors.save(new ContributorRule(c.contributor(), c.descriptionContains(), profile(c.targetProfile()))));
         orEmpty(seed.untrackedAccounts()).forEach(id ->
-                accounts.save(new TrackedAccount(id, "(aguardando sincronização)", "BANK", false)));
+                accounts.save(new Account(id, "(aguardando sincronização)", AccountKind.CHECKING, false, Instant.now())));
         log.info("Regras iniciais carregadas: {} perfis", profiles.count());
     }
 

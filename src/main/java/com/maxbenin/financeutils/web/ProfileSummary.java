@@ -6,9 +6,10 @@ import java.util.Map;
 /**
  * Totais de um perfil no mês.
  *
- * @param contributionsReceived depósitos de membros nas contas deste perfil, por contribuinte
- * @param contributionsMade     quanto este perfil depositou nas contas de outros perfis
+ * @param contributionsReceived entradas vindas de outro perfil ou de quem não tem conta no app, por contribuinte
+ * @param contributionsMade     gastos que foram transferências para outro perfil, por perfil de destino
  * @param bySubprofile          gastos por subperfil (ex.: Pedro)
+ * @param neutral               soma do que ficou fora dos totais por estar marcado "não conta"
  */
 public record ProfileSummary(
         String profile,
@@ -18,12 +19,12 @@ public record ProfileSummary(
         BigDecimal variable,
         BigDecimal superfluous,
         Map<String, BigDecimal> contributionsReceived,
-        BigDecimal contributionsMade,
-        Map<String, BigDecimal> bySubprofile) {
+        Map<String, BigDecimal> contributionsMade,
+        Map<String, BigDecimal> bySubprofile,
+        BigDecimal neutral) {
 
-    /** Sobra = entradas + contribuições recebidas − gastos − contribuições feitas. */
+    /** Sobra = Entradas − Gastos. */
     public BigDecimal balance() {
-        BigDecimal received = contributionsReceived.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
-        return income.add(received).subtract(expenses).subtract(contributionsMade);
+        return income.subtract(expenses);
     }
 }

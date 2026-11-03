@@ -24,7 +24,13 @@ dinzo:
 finance:
   sync:
     lookback-days: 60
+    initial-load-months: 12
     cron: "0 0 */6 * * *"
+
+server:
+  servlet:
+    session:
+      tracking-modes: cookie
 
 management:
   endpoints:

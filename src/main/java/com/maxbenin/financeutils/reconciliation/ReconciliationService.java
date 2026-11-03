@@ -37,9 +37,9 @@ public class ReconciliationService {
         if (accept) {
             LedgerEntry manual = entries.findById(r.getManualId()).orElseThrow();
             LedgerEntry real = entries.findById(r.getRealId()).orElseThrow();
-            manual.mergeInto(real.getDinzoId());
+            manual.mergeInto(real.getId());
             // Outros candidatos do mesmo manual deixam de valer
-            reconciliations.findByManualId(manual.getDinzoId()).stream()
+            reconciliations.findByManualId(manual.getId()).stream()
                     .filter(o -> !o.getId().equals(r.getId()) && o.getStatus() == ReconciliationStatus.PENDING_REVIEW)
                     .forEach(o -> o.decide(false, clock.instant()));
             entries.flush();

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -37,48 +38,42 @@ public class DashboardService {
         for (Profile p : profiles.findByParentIsNullAndActiveTrueOrderByName()) {
             List<LedgerEntry> mine = list.stream().filter(e -> p.getId().equals(e.getProfileId())).toList();
             List<LedgerEntry> expenses = mine.stream().filter(e -> e.getKind() == EntryKind.EXPENSE).toList();
-
-            Map<String, BigDecimal> received = mine.stream()
-                    .filter(e -> e.getKind() == EntryKind.CONTRIBUTION)
-                    .collect(Collectors.groupingBy(LedgerEntry::getContributor, TreeMap::new,
-                            Collectors.reducing(BigDecimal.ZERO, LedgerEntry::getAmount, BigDecimal::add)));
-            BigDecimal made = sum(list.stream()
-                    .filter(e -> e.getKind() == EntryKind.CONTRIBUTION)
-                    .filter(e -> p.getName().equalsIgnoreCase(e.getContributor()))
-                    .filter(e -> !p.getId().equals(e.getProfileId()))
-                    .map(LedgerEntry::getAmount).toList());
-
-            Map<String, BigDecimal> bySub = expenses.stream()
-                    .filter(e -> e.getSubprofileId() != null)
-                    .collect(Collectors.groupingBy(e -> names.get(e.getSubprofileId()), TreeMap::new,
-                            Collectors.reducing(BigDecimal.ZERO, LedgerEntry::signedExpense, BigDecimal::add)));
+            List<LedgerEntry> income = mine.stream().filter(e -> e.getKind() == EntryKind.INCOME).toList();
 
             result.add(new ProfileSummary(
                     p.getName(),
-                    sum(mine.stream().filter(e -> e.getKind() == EntryKind.INCOME).map(LedgerEntry::getAmount).toList()),
-                    expenseSum(expenses, e -> true),
-                    expenseSum(expenses, e -> e.getNature() == Nature.FIXED),
-                    expenseSum(expenses, e -> e.getNature() == Nature.VARIABLE),
-                    expenseSum(expenses, e -> Boolean.TRUE.equals(e.getSuperfluous())),
-                    received,
-                    made,
-                    bySub));
+                    sum(income, LedgerEntry::getAmount),
+                    sum(expenses, LedgerEntry::signedExpense),
+                    sum(filter(expenses, e -> e.getNature() == Nature.FIXED), LedgerEntry::signedExpense),
+                    sum(filter(expenses, e -> e.getNature() == Nature.VARIABLE), LedgerEntry::signedExpense),
+                    sum(filter(expenses, e -> Boolean.TRUE.equals(e.getSuperfluous())), LedgerEntry::signedExpense),
+                    group(filter(income, e -> e.getContributor() != null), LedgerEntry::getContributor, LedgerEntry::getAmount),
+                    group(filter(expenses, e -> e.getCounterpartProfileId() != null),
+                            e -> names.get(e.getCounterpartProfileId()), LedgerEntry::getAmount),
+                    group(filter(expenses, e -> e.getSubprofileId() != null),
+                            e -> names.get(e.getSubprofileId()), LedgerEntry::signedExpense),
+                    sum(filter(mine, e -> e.getKind() == EntryKind.NEUTRAL), LedgerEntry::getAmount)));
         }
         return result;
     }
 
-    /** Lançamentos sem perfil, que precisam de uma regra ou de ajuste manual. */
+    /** Lançamentos sem perfil, que precisam de uma regra ou de escolha manual. */
     public List<LedgerEntry> unassigned(YearMonth month) {
-        return entries.findEffective(month.atDay(1), month.atEndOfMonth()).stream()
-                .filter(e -> e.getProfileId() == null && e.getKind() != EntryKind.IGNORED)
-                .toList();
+        return filter(entries.findEffective(month.atDay(1), month.atEndOfMonth()),
+                e -> e.getProfileId() == null && e.getKind() != EntryKind.IGNORED);
     }
 
-    private static BigDecimal expenseSum(List<LedgerEntry> expenses, Predicate<LedgerEntry> filter) {
-        return sum(expenses.stream().filter(filter).map(LedgerEntry::signedExpense).toList());
+    private static List<LedgerEntry> filter(List<LedgerEntry> list, Predicate<LedgerEntry> p) {
+        return list.stream().filter(p).toList();
     }
 
-    private static BigDecimal sum(List<BigDecimal> values) {
-        return values.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+    private static BigDecimal sum(List<LedgerEntry> list, Function<LedgerEntry, BigDecimal> value) {
+        return list.stream().map(value).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private static Map<String, BigDecimal> group(List<LedgerEntry> list, Function<LedgerEntry, String> key,
+                                                 Function<LedgerEntry, BigDecimal> value) {
+        return list.stream().collect(Collectors.groupingBy(key, TreeMap::new,
+                Collectors.reducing(BigDecimal.ZERO, value, BigDecimal::add)));
     }
 }
